@@ -1,0 +1,68 @@
+@page "/login"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@rendermode @(new InteractiveWebAssemblyRenderMode())
+
+<h3>Login</h3>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-danger">@message</div>
+}
+
+<EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" FormName="login-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="email">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+        <ValidationMessage For="@(() => loginModel.Email)" />
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password</label>
+        <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+        <ValidationMessage For="@(() => loginModel.Password)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+    // [SupplyParameterFromForm]
+    private LoginModel loginModel { get; set; } = new LoginModel();
+
+    // [CascadingParameter]
+    // public HttpContext HttpContext { get; set; }
+
+    private string message;
+
+    private async Task HandleLogin()
+    {
+        var response = await Http.PostAsJsonAsync("login?useCookies=true", loginModel);
+        if (response.IsSuccessStatusCode)
+        {
+            // var claims = new List<Claim>()
+            // {
+            //     new Claim(ClaimTypes.Email, loginModel.Email)
+            // };
+            //
+            // var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            // var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+            // await HttpContext.SignInAsync(claimsPrincipal);
+            Navigation.NavigateTo("/server-login");
+        }
+        else
+        {
+            // message = "Login failed";
+            message = response.StatusCode.ToString();
+        }
+    }
+
+    public class LoginModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+}

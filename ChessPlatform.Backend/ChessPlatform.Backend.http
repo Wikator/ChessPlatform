@@ -1,0 +1,14 @@
+@ChessPlatform.Backend_HostAddress = http://localhost:5133
+
+POST {{ChessPlatform.Backend_HostAddress}}/register/
+Content-Type: application/json
+
+{
+    "email": "test1@gmail.com",
+    "password": "Pa$$w0rd"
+}
+
+###
+
+GET {{ChessPlatform.Backend_HostAddress}}/game/1
+Accept: application/json

@@ -1,0 +1,29 @@
+﻿@page "/"
+@inject HttpClient Http
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+@message
+
+<AuthorizeView>
+    <Authorized>
+        Authenticated
+    </Authorized>
+    <NotAuthorized>
+        Not Authenticated
+    </NotAuthorized>
+</AuthorizeView>
+
+
+Welcome to your new app.
+
+@code {
+    private string message = "awaiting";
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync("test");
+        message = response.StatusCode.ToString();
+    }
+}

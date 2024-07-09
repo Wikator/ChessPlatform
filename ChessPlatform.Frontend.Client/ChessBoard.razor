@@ -1,0 +1,341 @@
+@page "/ChessBoard"
+@using ChessPlatform.ChessLogic.Models
+@using ChessPlatform.ChessLogic.Pieces
+@using ChessPlatform.Shared
+@using AutoMapper
+@using ChessPlatform.Frontend.Client.Services
+@inject SignalRChessService ChessService
+@inject HttpClient HttpClient
+@inject IMapper mapper
+@rendermode @(new InteractiveWebAssemblyRenderMode(false))
+
+<style>
+    .chess-board {
+        display: flex;
+        justify-content: center;
+        flex-direction: column-reverse;
+        width: 480px;
+        height: 480px;
+    }
+    
+    .rotated {
+        transform: rotate(180deg);
+    }
+    
+    .row {
+        display: flex;
+        flex-direction: row;
+    }
+    
+    .square {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 60px;
+        width: 60px;
+        cursor: pointer;
+        border: 1px solid blue;
+        background-color: white;
+    }
+    
+    
+    .game-over-message {
+        color: white;
+    }
+    
+    .promotion-dialog {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 300px;
+        height: 100px;
+    }
+    
+    .promotion-dialog img {
+        height: 70px;
+        cursor: pointer;
+    }
+    
+    .close-promotion-dialog {
+        font-size: 45px;
+        cursor: pointer;
+        color: white;
+    }
+    
+    .dark {
+        background-color: #779AAF
+    }
+    
+    .light {
+        background-color: #D9E4E8;
+    }
+    
+    .piece {
+        width: 50px;
+    }
+    
+    .selected-square {
+        box-shadow: inset rgba(60, 70, 85, 0.5) 0px 0px 40px 0px, inset rgba(60, 70, 85, 0.5) 0px 0px 40px 0px, inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+    }
+    
+    .safe-square {
+        position: absolute;
+        height: 20px;
+        width: 20px;
+        background-color: #bbb;
+        border-radius: 50%;
+        z-index: 100;
+    }
+    
+    .king-in-check {
+        box-shadow: inset rgb(179, 21, 0) 0px 0px 40px 0px, inset rgb(163, 11, 0) 0px 0px 40px 0px, inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+    }
+    
+    .last-move {
+        box-shadow: inset rgb(6, 179, 0) 0px 0px 40px 0px, inset rgb(6, 179, 0)0px 0px 40px 0px, inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+    }
+    
+    .promotion-square {
+        box-shadow: inset rgb(0, 98, 150) 0px 0px 40px 0px, inset rgb(0, 98, 150) 0px 0px 40px 0px, inset rgba(0, 0, 0, 1) 0px 0px 36px -24px;
+    }
+</style>
+
+<AuthorizeView>
+    <Authorized>
+        <p>You are logged in!</p>
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not logged in.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@message
+
+<div class="chess-board">
+    @for (var row = 0; row < 8; row++)
+    {
+        <div class="row">
+            @for (var column = 0; column < 8; column++)
+            {
+                var coords = new Coords(row, column);
+                <div
+                    class="@("square"
+                             + (IsSquareBlack(coords) ? " dark" : " light")
+                             + (IsSquareSelected(coords) ? " selected-square" : "")
+                             + (IsSquareLastMove(coords) ? " last-move" : "")
+                             + (IsSquareCheck(coords) ? " king-in-check": "")
+                             + (IsSquarePromotionSquare(coords) ? " promotion-square" : ""))"
+                     @onclick="_ => Move(coords)">
+                    @{ var piece = chessBoard[coords]; }
+                    
+                    <div class="@(IsSquareSafeForSelectedPiece(coords) ? "safe-square" : "")">
+                                                
+                    </div>
+                    @if (piece is not null)
+                    {
+                        
+                        <img src="@pieceImagePaths[piece.FENChar]" alt="piece" class="piece" />
+                    }
+                </div>
+            }
+        </div>
+    }
+    
+    @if (isPromotionActive)
+    {
+        <div class="promotion-dialog">
+            @foreach (var piece in PromotionPieces)
+            {
+                <img src="@(pieceImagePaths[piece])" alt="piece" @onclick="_ => PromotePiece(piece)" />
+            }
+            
+            <span class="close-promotion-dialog" @onclick="ClosePawnPromotionDialog">
+                &times;
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    private ChessLogic.ChessBoard chessBoard = new();
+    private string message = "20";
+    private Square? selectedSquare;
+    private Coords[] pieceSafeSquares = [];
+    
+    private static bool IsSquareBlack(Coords coords) =>
+        (coords.Row + coords.Column) % 2 == 0;
+
+    private Dictionary<FENChar, string> pieceImagePaths = new()
+    {
+        { FENChar.WhitePawn, "pieces/white_pawn.svg" },
+        { FENChar.WhiteKnight, "pieces/white_knight.svg" },
+        { FENChar.WhiteBishop, "pieces/white_bishop.svg" },
+        { FENChar.WhiteRook, "pieces/white_rook.svg" },
+        { FENChar.WhiteQueen, "pieces/white_queen.svg" },
+        { FENChar.WhiteKing, "pieces/white_king.svg" },
+        { FENChar.BlackPawn, "pieces/black_pawn.svg" },
+        { FENChar.BlackKnight, "pieces/black_knight.svg" },
+        { FENChar.BlackBishop, "pieces/black_bishop.svg" },
+        { FENChar.BlackRook, "pieces/black_rook.svg" },
+        { FENChar.BlackQueen, "pieces/black_queen.svg" },
+        { FENChar.BlackKing, "pieces/black_king.svg" }
+    };
+
+    private bool isPromotionActive;
+    private Coords? promotionCoords;
+    private FENChar? promotedPiece;
+    private Color? playerColor;
+
+    private IEnumerable<FENChar> PromotionPieces
+    {
+        get
+        {
+            return chessBoard.PlayerColor switch
+            {
+                Color.White => [FENChar.WhiteKnight, FENChar.WhiteBishop, FENChar.WhiteRook, FENChar.WhiteQueen],
+                Color.Black => [FENChar.BlackKing, FENChar.BlackBishop, FENChar.BlackRook, FENChar.BlackQueen],
+                _ => throw new ArgumentOutOfRangeException(nameof(chessBoard.PlayerColor), chessBoard.PlayerColor, null)
+            };
+        }
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await HttpClient.GetAsync("test");
+        message = response.StatusCode.ToString();
+        
+        var boardResponse = await HttpClient.GetFromJsonAsync<GameDto>("game/1");
+        
+        var board = new Piece?[8, 8];
+        
+        for (var i = 0; i < 8; i++)
+        {
+            for (var j = 0; j < 8; j++)
+            {
+                board[i, j] = mapper.Map<Piece?>(boardResponse!.Board[i][j]);
+            }
+        }
+        
+        chessBoard = new ChessLogic.ChessBoard(board, boardResponse!.PlayerColor, mapper.Map<LastMove?>(boardResponse.LastMove));
+        
+        ChessService.MoveReceived += OnMoveReceived;
+        ChessService.SetPlayerColor += OnSetPlayerColor;
+        await ChessService.StartAsync();
+    }
+    
+    private void OnMoveReceived(Coords from, Coords to)
+    {
+        UpdateBoard(from, to);
+        InvokeAsync(StateHasChanged).GetAwaiter();
+    }
+    
+    private void OnSetPlayerColor(Color color)
+    {
+        playerColor = color;
+    }
+
+    private bool IsSquareSelected(Coords coords) => coords == selectedSquare?.Coords;
+
+    private bool IsSquareSafeForSelectedPiece(Coords coords) =>
+        pieceSafeSquares.Any(c => coords == c);
+
+    private void SelectingPiece(Coords coords)
+    {
+        var piece = chessBoard[coords];
+        
+        if (piece is null || piece.Color != playerColor || IsWrongPieceSelected(piece.FENChar))
+            return;
+        
+        var isSameSquareSelected = coords == selectedSquare?.Coords;
+        
+        RemovePreviouslySelectedAndSafeSquares();
+        
+        if (isSameSquareSelected)
+            return;
+        
+        selectedSquare = new Square(piece.FENChar, coords);
+        pieceSafeSquares = chessBoard.SafeSquares[coords];
+    }
+    
+    private bool IsWrongPieceSelected(FENChar piece)
+    {
+        var isWhitePieceSelected = piece.ToString().StartsWith("White");
+        return (isWhitePieceSelected && chessBoard.PlayerColor == Color.Black) ||
+               (!isWhitePieceSelected && chessBoard.PlayerColor == Color.White);
+        
+    }
+
+    private async Task Move(Coords coords)
+    {
+        SelectingPiece(coords);
+        await PlacingPieceOnline(coords);
+    }
+    
+    private async Task PlacingPieceOnline(Coords newCoords)
+    {
+        if (selectedSquare is null || !IsSquareSafeForSelectedPiece(newCoords))
+            return;
+        
+        var isPawnSelected = selectedSquare.Value.Piece is FENChar.WhitePawn or FENChar.BlackPawn;
+        var isPawnOnLastRank = isPawnSelected && newCoords.Row is 0 or 7;
+        var shouldOpenPromotionDialog = !isPromotionActive && isPawnOnLastRank;
+
+        if (shouldOpenPromotionDialog)
+        {
+            pieceSafeSquares = [];
+            isPromotionActive = true;
+            promotionCoords = newCoords;
+            return;
+        }
+        await ChessService.SendMoveAsync(selectedSquare.Value.Coords, newCoords);
+        UpdateBoard(selectedSquare.Value.Coords, newCoords);
+    }
+
+    private void UpdateBoard(Coords previousCoords, Coords newCoords)
+    {
+        chessBoard.Move(previousCoords, newCoords, promotedPiece);
+        
+        RemovePreviouslySelectedAndSafeSquares();
+    }
+    
+    private bool IsSquarePromotionSquare(Coords coords) =>
+        coords == promotionCoords;
+    
+    private void RemovePreviouslySelectedAndSafeSquares()
+    {
+        selectedSquare = null;
+        pieceSafeSquares = [];
+
+        if (!isPromotionActive)
+            return;
+        
+        isPromotionActive = false;
+        promotedPiece = null;
+        promotionCoords = null;
+    }
+    
+    private bool IsSquareLastMove(Coords coords)
+    {
+        if (chessBoard.LastMove is not { } lastMove)
+            return false;
+        
+        return coords == lastMove.From || coords == lastMove.To;
+    }
+    
+    private bool IsSquareCheck(Coords coords) =>
+        coords == chessBoard.CheckedKingCoords;
+
+    private void PromotePiece(FENChar piece)
+    {
+        if (promotionCoords is null || selectedSquare is null)
+            return;
+        
+        promotedPiece = piece;
+        UpdateBoard(selectedSquare.Value.Coords, promotionCoords.Value);
+    }
+
+    private void ClosePawnPromotionDialog()
+    {
+        RemovePreviouslySelectedAndSafeSquares();
+    }
+}
