@@ -35,21 +35,26 @@ public class ChessHub(IChessService chessService) : Hub
 
         if (context is null)
             return;
-
-        var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         
         var game = chessService.GetGame(1);
+        var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        
+        if (userId is null)
+            return;
         
         if (game.WhitePlayerId is null)
         {
-            game.WhitePlayerId = userId?.Value;
-            await Clients.Caller.SendAsync("SetPlayerColor", Color.White);
+            game.WhitePlayerId = userId.Value;
         }
-        else if (game.BlackPlayerId is null)
+        else if (game.BlackPlayerId is null && game.WhitePlayerId != userId.Value)
         {
-            game.BlackPlayerId = userId?.Value;
-            await Clients.Caller.SendAsync("SetPlayerColor", Color.Black);
+            game.BlackPlayerId = userId.Value;
         }
+        
+        if (game.WhitePlayerId is not null && game.WhitePlayerId == userId?.Value)
+            await Clients.Caller.SendAsync("SetPlayerColor", Color.White);
+        else if (game.BlackPlayerId is not null && game.BlackPlayerId == userId?.Value)
+            await Clients.Caller.SendAsync("SetPlayerColor", Color.Black);
         
         await base.OnConnectedAsync();
     }

@@ -20,7 +20,7 @@ public class AutoMapperProfiles : Profile
     {
         public Piece Convert(PieceDto source, Piece destination, ResolutionContext context)
         {
-            return source.FENChar switch
+            Piece piece = source.FENChar switch
             {
                 FENChar.WhitePawn => new Pawn(source.Color),
                 FENChar.WhiteKnight => new Knight(source.Color),
@@ -36,6 +36,22 @@ public class AutoMapperProfiles : Profile
                 FENChar.BlackKing => new King(source.Color),
                 _ => throw new ArgumentOutOfRangeException(nameof(source), source, "Cannot convert to Piece")
             };
+
+            if (source.HasMoved is null || !source.HasMoved.Value) return piece;
+            switch (piece)
+            {
+                case King king:
+                    king.SetHasMoved();
+                    break;
+                case Rook rook:
+                    rook.SetHasMoved();
+                    break;
+                case Pawn pawn:
+                    pawn.SetHasMoved();
+                    break;
+            }
+
+            return piece;
         }
     }
 }
