@@ -1,4 +1,4 @@
-using ChessPlatform.ChessLogic.Models;
+using ChessPlatform.Models.Chess;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace ChessPlatform.Frontend.Client.Services;

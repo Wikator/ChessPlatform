@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Security.Claims;
-using ChessPlatform.Frontend.Client.Models;
+using ChessPlatform.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
@@ -50,14 +50,15 @@ public class PersistingAuthenticationStateProvider : ServerAuthenticationStatePr
             Console.WriteLine("User authenticated");
             // var userId = principal.FindFirst(_options.ClaimsIdentity.UserIdClaimType)?.Value;
             var email = principal.FindFirst(ClaimTypes.Email)?.Value;
-
+            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             
 
-            if (email is not null)
+            if (email is not null && userId is not null)
             {
                 Console.WriteLine("Persisting...");
                 _state.PersistAsJson(nameof(UserInfo), new UserInfo
                 {
+                    Id = userId,
                     Email = email
                 });
             }

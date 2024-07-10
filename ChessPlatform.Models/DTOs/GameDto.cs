@@ -1,6 +1,6 @@
-using ChessPlatform.ChessLogic.Models;
+using ChessPlatform.Models.Chess;
 
-namespace ChessPlatform.Shared;
+namespace ChessPlatform.Models.DTOs;
 
 public class GameDto
 {

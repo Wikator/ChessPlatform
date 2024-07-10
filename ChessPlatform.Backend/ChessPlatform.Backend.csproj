@@ -26,7 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ChessPlatform.ChessLogic\ChessPlatform.ChessLogic.csproj" />
-      <ProjectReference Include="..\ChessPlatform.Shared\ChessPlatform.Shared.csproj" />
+      <ProjectReference Include="..\ChessPlatform.Models\ChessPlatform.Models.csproj" />
     </ItemGroup>
 
 </Project>

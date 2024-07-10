@@ -1,4 +1,4 @@
-namespace ChessPlatform.Shared;
+namespace ChessPlatform.Models.DTOs;
 
 public class LastMoveDto
 {

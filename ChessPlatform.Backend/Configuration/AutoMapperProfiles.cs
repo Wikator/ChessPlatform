@@ -1,8 +1,9 @@
 using AutoMapper;
 using ChessPlatform.ChessLogic;
-using ChessPlatform.ChessLogic.Models;
-using ChessPlatform.ChessLogic.Pieces;
-using ChessPlatform.Shared;
+using ChessPlatform.ChessLogic.ChessBoard;
+using ChessPlatform.Models.Chess;
+using ChessPlatform.Models.Chess.Pieces;
+using ChessPlatform.Models.DTOs;
 
 namespace ChessPlatform.Backend.Configuration;
 

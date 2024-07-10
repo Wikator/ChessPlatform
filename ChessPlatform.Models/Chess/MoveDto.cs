@@ -1,4 +1,4 @@
-namespace ChessPlatform.ChessLogic.Models;
+namespace ChessPlatform.Models.Chess;
 
 public class MoveDto(int fromRow, int fromColumn, int toRow, int toColumn)
 {

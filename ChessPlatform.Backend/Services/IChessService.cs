@@ -1,5 +1,6 @@
 using ChessPlatform.ChessLogic;
-using ChessPlatform.ChessLogic.Models;
+using ChessPlatform.ChessLogic.ChessBoard;
+using ChessPlatform.Models.Chess;
 
 namespace ChessPlatform.Backend.Services;
 

@@ -4,6 +4,7 @@ using ChessPlatform.Frontend.Client.Services;
 using ChessPlatform.Frontend.Server.Components;
 using ChessPlatform.Frontend.Server.Handlers;
 using ChessPlatform.Frontend.Server.StateProviders;
+using ChessPlatform.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -67,16 +68,22 @@ app.MapGet("/server-login",  async (HttpClient client, HttpContext httpContext) 
     if (!httpContext.Request.Cookies.TryGetValue(".AspNetCore.Identity.Application", out var authCookie))
         return Results.Redirect("/login");
     
-    var request = new HttpRequestMessage(HttpMethod.Get, "account/email");
+    var request = new HttpRequestMessage(HttpMethod.Get, "account/info");
     request.Headers.Add("Cookie", authCookie);
     var response = client.SendAsync(request).Result;
 
     if (!response.IsSuccessStatusCode)
         return Results.Redirect("/login");
+    
+    var userInfo = await response.Content.ReadFromJsonAsync<UserInfo>();
+    
+    if (userInfo is null)
+        return Results.Redirect("/login");
 
     var claims = new List<Claim>
     {
-        new(ClaimTypes.Email, await response.Content.ReadAsStringAsync())
+        new(ClaimTypes.Email, userInfo.Email),
+        new(ClaimTypes.NameIdentifier, userInfo.Id)
     };
 
     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

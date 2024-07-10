@@ -1,7 +1,7 @@
 using AutoMapper;
-using ChessPlatform.ChessLogic.Models;
-using ChessPlatform.ChessLogic.Pieces;
-using ChessPlatform.Shared;
+using ChessPlatform.Models.Chess;
+using ChessPlatform.Models.Chess.Pieces;
+using ChessPlatform.Models.DTOs;
 
 namespace ChessPlatform.Frontend.Client.Configuration;
 

@@ -10,7 +10,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessPlatform.AppHost", "Ch
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessPlatform.Frontend.Client", "ChessPlatform.Frontend.Client\ChessPlatform.Frontend.Client.csproj", "{21FD7AFB-AE14-47A1-86DB-11BDF87705D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessPlatform.Shared", "ChessPlatform.Shared\ChessPlatform.Shared.csproj", "{15B7368F-57F1-430C-932C-E1008FC4A0A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessPlatform.Models", "ChessPlatform.Models\ChessPlatform.Models.csproj", "{15B7368F-57F1-430C-932C-E1008FC4A0A5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

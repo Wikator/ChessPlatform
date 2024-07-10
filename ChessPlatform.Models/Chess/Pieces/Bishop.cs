@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
-using ChessPlatform.ChessLogic.Models;
 
-namespace ChessPlatform.ChessLogic.Pieces;
+namespace ChessPlatform.Models.Chess.Pieces;
 
 [method: JsonConstructor]
 public record class Bishop(Color Color) : Piece(Color)

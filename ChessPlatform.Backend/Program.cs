@@ -4,8 +4,8 @@ using ChessPlatform.Backend.Configuration;
 using ChessPlatform.Backend.Data;
 using ChessPlatform.Backend.Services;
 using ChessPlatform.Backend.SignalR;
-using ChessPlatform.ChessLogic.Pieces;
-using ChessPlatform.Shared;
+using ChessPlatform.Models;
+using ChessPlatform.Models.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,10 +48,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("test", () => "Hello World!").RequireAuthorization();
-app.MapGet("account/email", (HttpContext context) =>
+app.MapGet("account/info", (HttpContext context) =>
 {
     var userEmail = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email);
-    return userEmail?.Value ?? "No email";
+    var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+    
+    if (userId is null || userEmail is null)
+        return Results.Unauthorized();
+    
+    return Results.Ok(new UserInfo
+    {
+        Email = userEmail.Value,
+        Id = userId.Value
+    });
 }).RequireAuthorization();
 
 app.MapGet("game/{id:int}", (IChessService chessService, IMapper mapper, int id) =>

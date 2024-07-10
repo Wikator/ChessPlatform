@@ -1,9 +1,9 @@
 @page "/ChessBoard"
-@using ChessPlatform.ChessLogic.Models
-@using ChessPlatform.ChessLogic.Pieces
-@using ChessPlatform.Shared
 @using AutoMapper
 @using ChessPlatform.Frontend.Client.Services
+@using ChessPlatform.Models.Chess
+@using ChessPlatform.Models.Chess.Pieces
+@using ChessPlatform.Models.DTOs
 @inject SignalRChessService ChessService
 @inject HttpClient HttpClient
 @inject IMapper mapper
@@ -157,10 +157,10 @@
 </div>
 
 @code {
-    private ChessLogic.ChessBoard chessBoard = new();
+    private ChessLogic.ChessBoard.ChessBoard chessBoard = new();
     private string message = "20";
     private Square? selectedSquare;
-    private Coords[] pieceSafeSquares = [];
+    private IEnumerable<Coords> pieceSafeSquares = [];
     
     private static bool IsSquareBlack(Coords coords) =>
         (coords.Row + coords.Column) % 2 == 0;
@@ -216,7 +216,7 @@
             }
         }
         
-        chessBoard = new ChessLogic.ChessBoard(board, boardResponse!.PlayerColor, mapper.Map<LastMove?>(boardResponse.LastMove));
+        chessBoard = new ChessLogic.ChessBoard.ChessBoard(board, boardResponse!.PlayerColor, mapper.Map<LastMove?>(boardResponse.LastMove));
         
         ChessService.MoveReceived += OnMoveReceived;
         ChessService.SetPlayerColor += OnSetPlayerColor;

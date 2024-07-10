@@ -1,4 +1,4 @@
-namespace ChessPlatform.ChessLogic.Models;
+namespace ChessPlatform.Models.Chess;
 
 public enum FENChar
 {

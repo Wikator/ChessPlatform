@@ -1,3 +1,3 @@
-namespace ChessPlatform.ChessLogic.Models;
+namespace ChessPlatform.Models.Chess;
 
 public record struct Coords(int Row, int Column);

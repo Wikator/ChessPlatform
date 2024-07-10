@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using ChessPlatform.Backend.Services;
-using ChessPlatform.ChessLogic.Models;
+using ChessPlatform.Models.Chess;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ChessPlatform.Backend.SignalR;
