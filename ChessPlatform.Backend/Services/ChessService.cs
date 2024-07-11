@@ -6,6 +6,8 @@ namespace ChessPlatform.Backend.Services;
 
 public class ChessService : IChessService
 {
+    private int _nextGameId = 2;
+    
     private readonly Dictionary<int, ChessBoard> _boards = new()
     {
         { 1, new ChessBoard() }
@@ -20,5 +22,19 @@ public class ChessService : IChessService
     public ChessBoard GetGame(int gameId)
     {
         return _boards[gameId];
+    }
+
+    public int CreateGame(string whitePlayerId, string? blackPlayerId = null)
+    {
+        var gameId = _nextGameId++;
+        
+        var game = new ChessBoard
+        {
+            WhitePlayerId = whitePlayerId,
+            BlackPlayerId = blackPlayerId
+        };
+        
+        _boards.Add(gameId, game);
+        return gameId;
     }
 }

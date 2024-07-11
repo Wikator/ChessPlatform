@@ -7,7 +7,7 @@ namespace ChessPlatform.Backend.SignalR;
 
 public class ChessHub(IChessService chessService) : Hub
 {
-    public async Task SendMove(int fromRow, int fromCol, int toRow, int toCol)
+    public async Task SendMove(int fromRow, int fromCol, int toRow, int toCol, int roomId)
     {
         var context = Context.GetHttpContext();
         var userId = context?.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
@@ -15,7 +15,7 @@ public class ChessHub(IChessService chessService) : Hub
         if (userId is null)
             return;
         
-        var game = chessService.GetGame(1);
+        var game = chessService.GetGame(roomId);
 
         switch (game.PlayerColor)
         {
@@ -25,18 +25,26 @@ public class ChessHub(IChessService chessService) : Hub
                 return;
         }
         
-        chessService.PlayMove(1, new Coords(fromRow, fromCol), new Coords(toRow, toCol));
-        await Clients.Others.SendAsync("ReceiveMove", fromRow, fromCol, toRow, toCol);
+        chessService.PlayMove(roomId, new Coords(fromRow, fromCol), new Coords(toRow, toCol));
+        await Clients.OthersInGroup(roomId.ToString()).SendAsync("ReceiveMove", fromRow, fromCol, toRow, toCol);
     }
 
-    public override async Task OnConnectedAsync()
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        await Clients.Others.SendAsync("PlayerLeft", Context.ConnectionId);
+    }
+    
+    public async Task JoinRoom(string roomId)
     {
         var context = Context.GetHttpContext();
 
         if (context is null)
             return;
         
-        var game = chessService.GetGame(1);
+        if (!int.TryParse(roomId, out var id))
+            return;
+        
+        var game = chessService.GetGame(id);
         var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
         
         if (userId is null)
@@ -56,6 +64,13 @@ public class ChessHub(IChessService chessService) : Hub
         else if (game.BlackPlayerId is not null && game.BlackPlayerId == userId?.Value)
             await Clients.Caller.SendAsync("SetPlayerColor", Color.Black);
         
-        await base.OnConnectedAsync();
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        await Clients.OthersInGroup(roomId).SendAsync("PlayerJoined");
+    }
+    
+    public async Task LeaveRoom(string roomId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, roomId);
+        await Clients.OthersInGroup(roomId).SendAsync("PLayerLeft");
     }
 }

@@ -70,6 +70,16 @@ app.MapGet("game/{id:int}", (IChessService chessService, IMapper mapper, int id)
     return Results.Ok(mapper.Map<GameDto>(game));
 });
 
+app.MapPost("game", (IChessService chessService, HttpContext context) =>
+{
+    var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+    if (userId is null)
+        return Results.Unauthorized();
+
+    var gameId = chessService.CreateGame(userId.Value);
+    return Results.Created($"game/{gameId}", gameId);
+}).RequireAuthorization();
+
 app.MapIdentityApi<IdentityUser>();
 
 app.MapHub<ChessHub>("/chessHub");
