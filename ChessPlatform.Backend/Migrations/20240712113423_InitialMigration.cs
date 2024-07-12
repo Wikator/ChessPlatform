@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ChessPlatform.Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class AddedIdentity : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -49,6 +49,21 @@ namespace ChessPlatform.Backend.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LastMoveEntity",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FromRow = table.Column<int>(type: "integer", nullable: false),
+                    FromColumn = table.Column<int>(type: "integer", nullable: false),
+                    ToRow = table.Column<int>(type: "integer", nullable: false),
+                    ToColumn = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LastMoveEntity", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -157,6 +172,78 @@ namespace ChessPlatform.Backend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ChessBoardEntity",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    LastMoveId = table.Column<Guid>(type: "uuid", nullable: true),
+                    PlayerTurn = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChessBoardEntity", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChessBoardEntity_LastMoveEntity_LastMoveId",
+                        column: x => x.LastMoveId,
+                        principalTable: "LastMoveEntity",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChessGames",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChessBoardId = table.Column<Guid>(type: "uuid", nullable: false),
+                    WhitePlayerId = table.Column<string>(type: "text", nullable: true),
+                    BlackPlayerId = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChessGames", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChessGames_AspNetUsers_BlackPlayerId",
+                        column: x => x.BlackPlayerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChessGames_AspNetUsers_WhitePlayerId",
+                        column: x => x.WhitePlayerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ChessGames_ChessBoardEntity_ChessBoardId",
+                        column: x => x.ChessBoardId,
+                        principalTable: "ChessBoardEntity",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PieceEntity",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ChessBoardId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FENChar = table.Column<int>(type: "integer", nullable: false),
+                    Color = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    HasMoved = table.Column<bool>(type: "boolean", nullable: true),
+                    Row = table.Column<int>(type: "integer", nullable: false),
+                    Column = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PieceEntity", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PieceEntity_ChessBoardEntity_ChessBoardId",
+                        column: x => x.ChessBoardId,
+                        principalTable: "ChessBoardEntity",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -193,6 +280,31 @@ namespace ChessPlatform.Backend.Migrations
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChessBoardEntity_LastMoveId",
+                table: "ChessBoardEntity",
+                column: "LastMoveId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChessGames_BlackPlayerId",
+                table: "ChessGames",
+                column: "BlackPlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChessGames_ChessBoardId",
+                table: "ChessGames",
+                column: "ChessBoardId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChessGames_WhitePlayerId",
+                table: "ChessGames",
+                column: "WhitePlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PieceEntity_ChessBoardId",
+                table: "PieceEntity",
+                column: "ChessBoardId");
         }
 
         /// <inheritdoc />
@@ -214,10 +326,22 @@ namespace ChessPlatform.Backend.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "ChessGames");
+
+            migrationBuilder.DropTable(
+                name: "PieceEntity");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "ChessBoardEntity");
+
+            migrationBuilder.DropTable(
+                name: "LastMoveEntity");
         }
     }
 }

@@ -13,7 +13,7 @@ public class AutoMapperProfiles : Profile
             .ConvertUsing<PieceDtoToPieceConverter>();
 
         CreateMap<CoordsDto, Coords>();
-        CreateMap<LastMoveDto, LastMove>();
+        CreateMap<LastMoveDto?, LastMove?>();
     }
     
     private class PieceDtoToPieceConverter : ITypeConverter<PieceDto, Piece>

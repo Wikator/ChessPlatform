@@ -32,5 +32,4 @@ builder.Services.AddCascadingAuthenticationState();
 // and this
 builder.Services.AddSingleton<AuthenticationStateProvider, PersistentAuthenticationStateProvider>();
 
-
 await builder.Build().RunAsync();

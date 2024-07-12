@@ -1,6 +1,35 @@
 @page "/CreateGame"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+
+
 <h3>CreateGame</h3>
 
-@code {
+<EditForm Model="Model" method="post" FormName="new-game-model" OnSubmit="CreateNewGame">
+    <div>
+        <InputText @bind-Value="Model.Name" />
+    </div>
     
+    <button class="btn btn-primary">Create Game</button>
+</EditForm>
+
+@code {
+
+    [SupplyParameterFromForm] public NewGameModel Model { get; set; } = new();
+    
+    private async Task CreateNewGame()
+    {
+        var response = await HttpClient.PostAsJsonAsync("game", new { });
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var gameId = await response.Content.ReadAsStringAsync();
+            NavigationManager.NavigateTo($"/ChessBoard/{gameId.Substring(1, gameId.Length - 2)}");
+        }
+    }
+
+    public class NewGameModel
+    {
+        public string Name { get; set; } = "";
+    }
 }

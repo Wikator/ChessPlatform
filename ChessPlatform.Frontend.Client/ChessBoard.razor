@@ -1,4 +1,4 @@
-@page "/ChessBoard"
+@page "/ChessBoard/{id}"
 @using AutoMapper
 @using ChessPlatform.Frontend.Client.Services
 @using ChessPlatform.Models.Chess
@@ -162,6 +162,9 @@
     private Square? selectedSquare;
     private IEnumerable<Coords> pieceSafeSquares = [];
     
+    [Parameter]
+    public string? Id { get; set; }
+    
     private static bool IsSquareBlack(Coords coords) =>
         (coords.Row + coords.Column) % 2 == 0;
 
@@ -201,10 +204,13 @@
     
     protected override async Task OnInitializedAsync()
     {
+        if (Id is null)
+            return;
+        
         var response = await HttpClient.GetAsync("test");
         message = response.StatusCode.ToString();
         
-        var boardResponse = await HttpClient.GetFromJsonAsync<GameDto>("game/1");
+        var boardResponse = await HttpClient.GetFromJsonAsync<GameDto>($"game/{Id}");
         
         var board = new Piece?[8, 8];
         
@@ -221,6 +227,7 @@
         ChessService.MoveReceived += OnMoveReceived;
         ChessService.SetPlayerColor += OnSetPlayerColor;
         await ChessService.StartAsync();
+        await ChessService.ChangeRoomAsync(Id);
     }
     
     private void OnMoveReceived(Coords from, Coords to)

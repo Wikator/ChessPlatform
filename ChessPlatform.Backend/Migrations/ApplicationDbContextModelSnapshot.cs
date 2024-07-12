@@ -22,6 +22,109 @@ namespace ChessPlatform.Backend.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.ChessBoardEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("LastMoveId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PlayerTurn")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastMoveId");
+
+                    b.ToTable("ChessBoardEntity");
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.ChessGameEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BlackPlayerId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ChessBoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WhitePlayerId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlackPlayerId");
+
+                    b.HasIndex("ChessBoardId");
+
+                    b.HasIndex("WhitePlayerId");
+
+                    b.ToTable("ChessGames");
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.LastMoveEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("FromColumn")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FromRow")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ToColumn")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ToRow")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LastMoveEntity");
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.PieceEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChessBoardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Color")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Column")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FENChar")
+                        .HasColumnType("integer");
+
+                    b.Property<bool?>("HasMoved")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Row")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChessBoardId");
+
+                    b.ToTable("PieceEntity");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -218,6 +321,49 @@ namespace ChessPlatform.Backend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.ChessBoardEntity", b =>
+                {
+                    b.HasOne("ChessPlatform.Backend.Entities.LastMoveEntity", "LastMove")
+                        .WithMany()
+                        .HasForeignKey("LastMoveId");
+
+                    b.Navigation("LastMove");
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.ChessGameEntity", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "BlackPlayer")
+                        .WithMany()
+                        .HasForeignKey("BlackPlayerId");
+
+                    b.HasOne("ChessPlatform.Backend.Entities.ChessBoardEntity", "ChessBoard")
+                        .WithMany()
+                        .HasForeignKey("ChessBoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "WhitePlayer")
+                        .WithMany()
+                        .HasForeignKey("WhitePlayerId");
+
+                    b.Navigation("BlackPlayer");
+
+                    b.Navigation("ChessBoard");
+
+                    b.Navigation("WhitePlayer");
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.PieceEntity", b =>
+                {
+                    b.HasOne("ChessPlatform.Backend.Entities.ChessBoardEntity", "ChessBoard")
+                        .WithMany("Pieces")
+                        .HasForeignKey("ChessBoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChessBoard");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -267,6 +413,11 @@ namespace ChessPlatform.Backend.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ChessPlatform.Backend.Entities.ChessBoardEntity", b =>
+                {
+                    b.Navigation("Pieces");
                 });
 #pragma warning restore 612, 618
         }

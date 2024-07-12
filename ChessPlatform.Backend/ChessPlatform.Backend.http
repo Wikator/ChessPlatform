@@ -4,11 +4,11 @@ POST {{ChessPlatform.Backend_HostAddress}}/register/
 Content-Type: application/json
 
 {
-    "email": "test@gmail.com",
+    "email": "test1@gmail.com",
     "password": "Pa$$w0rd"
 }
 
 ###
 
-GET {{ChessPlatform.Backend_HostAddress}}/game/1
+GET {{ChessPlatform.Backend_HostAddress}}/game/c9e345d2-336b-4378-98f4-954bf938ab84
 Accept: application/json

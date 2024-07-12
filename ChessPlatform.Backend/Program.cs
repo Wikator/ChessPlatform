@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<IChessService, ChessService>();
+// builder.Services.AddSingleton<IChessService, ChessService>();
+builder.Services.AddScoped<IChessService, ChessService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
@@ -63,20 +64,20 @@ app.MapGet("account/info", (HttpContext context) =>
     });
 }).RequireAuthorization();
 
-app.MapGet("game/{id:int}", (IChessService chessService, IMapper mapper, int id) =>
+app.MapGet("game/{id:guid}", async (IChessService chessService, IMapper mapper, Guid id) =>
 {
-    var game = chessService.GetGame(id);
-
+    var game = await chessService.GetGame(id);
+    Console.WriteLine(game?.WhitePlayerId is null);
     return Results.Ok(mapper.Map<GameDto>(game));
 });
 
-app.MapPost("game", (IChessService chessService, HttpContext context) =>
+app.MapPost("game", async (IChessService chessService, HttpContext context) =>
 {
     var userId = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
     if (userId is null)
         return Results.Unauthorized();
 
-    var gameId = chessService.CreateGame(userId.Value);
+    var gameId = await chessService.CreateGameAsync(userId.Value);
     return Results.Created($"game/{gameId}", gameId);
 }).RequireAuthorization();
 
