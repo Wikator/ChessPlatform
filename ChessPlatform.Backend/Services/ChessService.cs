@@ -2,23 +2,20 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ChessPlatform.Backend.Data;
 using ChessPlatform.Backend.Entities;
-using ChessPlatform.ChessLogic;
 using ChessPlatform.ChessLogic.ChessBoard;
 using ChessPlatform.Models.Chess;
+using ChessPlatform.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChessPlatform.Backend.Services;
 
 public class ChessService(ApplicationDbContext context, IMapper mapper) : IChessService
 {
-    public async Task PlayMove(Guid gameId, Coords from, Coords to)
+    public async Task PlayMove(Guid gameId, Coords from, Coords to, FENChar? promotedType)
     {
         var chessGame = await context.ChessGames
             .Where(game => game.Id == gameId)
-            .Include(game => game.ChessBoard)
-            .ThenInclude(chessBoard => chessBoard!.Pieces)
-            .Include(game => game.ChessBoard)
-            .ThenInclude(chessBoard => chessBoard!.LastMove)
+            .Include(game => game.LastMove)
             .Include(chessBoard => chessBoard.WhitePlayer)
             .SingleOrDefaultAsync();
         
@@ -26,12 +23,11 @@ public class ChessService(ApplicationDbContext context, IMapper mapper) : IChess
             return;
         
         var board = mapper.Map<ChessBoard>(chessGame);
-
-        board?.Move(from, to);
-        context.ChessGames.Remove(chessGame);
-        await context.SaveChangesAsync();
-        chessGame.ChessBoard = mapper.Map<ChessBoardEntity>(board);
-        context.ChessGames.Add(chessGame);
+        
+        board.Move(from, to, promotedType);
+        mapper.Map(board, chessGame);
+        
+        context.Update(chessGame);
         await context.SaveChangesAsync();
     }
 
@@ -39,14 +35,18 @@ public class ChessService(ApplicationDbContext context, IMapper mapper) : IChess
     {
         var game = await context.ChessGames
             .Where(game => game.Id == gameId)
-            .Include(game => game.ChessBoard)
-            .ThenInclude(chessBoard => chessBoard!.Pieces)
-            .Include(game => game.ChessBoard)
-            .ThenInclude(chessBoard => chessBoard!.LastMove)
-            .Include(chessBoard => chessBoard.WhitePlayer)
+            .Include(chessBoard => chessBoard.LastMove)
             .SingleOrDefaultAsync();
         
         return mapper.Map<ChessBoard?>(game);
+    }
+
+    public async Task<GameDto?> GetGameDto(Guid gameId)
+    {
+        return await context.ChessGames
+            .Where(game => game.Id == gameId)
+            .ProjectTo<GameDto>(mapper.ConfigurationProvider)
+            .SingleOrDefaultAsync();
     }
 
     public async Task<Guid> CreateGameAsync(string whitePlayerId, string? blackPlayerId = null)
@@ -57,15 +57,12 @@ public class ChessService(ApplicationDbContext context, IMapper mapper) : IChess
             BlackPlayerId = blackPlayerId
         };
         
-        var chessBoardEntity = mapper.Map<ChessBoardEntity>(chessBoard);
+        var chessGameEntity = mapper.Map<ChessGameEntity>(chessBoard);
         
-        var chessGameEntity = new ChessGameEntity
-        {
-            ChessBoard = chessBoardEntity,
-            WhitePlayerId = whitePlayerId,
-            BlackPlayerId = blackPlayerId
-        };
-        
+        Console.WriteLine(chessGameEntity.Fen);
+        var playerTimes = TimeSpan.FromMinutes(int.Parse(chessGameEntity.TimeControl.Split('+').First()));
+        chessGameEntity.WhitePlayerRemainingTime = playerTimes;
+        chessGameEntity.BlackPlayerRemainingTime = playerTimes;
         context.ChessGames.Add(chessGameEntity);
         await context.SaveChangesAsync();
         return chessGameEntity.Id;

@@ -3,6 +3,7 @@ using System;
 using ChessPlatform.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ChessPlatform.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240713143657_ChangedChessGameEntity")]
+    partial class ChangedChessGameEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,16 +34,10 @@ namespace ChessPlatform.Backend.Migrations
                     b.Property<string>("BlackPlayerId")
                         .HasColumnType("text");
 
-                    b.Property<TimeSpan>("BlackPlayerRemainingTime")
-                        .HasColumnType("interval");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Fen")
                         .IsRequired()
-                        .HasMaxLength(87)
-                        .HasColumnType("character varying(87)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("GameOverStatus")
                         .HasMaxLength(50)
@@ -55,16 +52,8 @@ namespace ChessPlatform.Backend.Migrations
                     b.Property<int>("PlayerTurn")
                         .HasColumnType("integer");
 
-                    b.Property<string>("TimeControl")
-                        .IsRequired()
-                        .HasMaxLength(6)
-                        .HasColumnType("character varying(6)");
-
                     b.Property<string>("WhitePlayerId")
                         .HasColumnType("text");
-
-                    b.Property<TimeSpan>("WhitePlayerRemainingTime")
-                        .HasColumnType("interval");
 
                     b.Property<int?>("Winner")
                         .HasColumnType("integer");
@@ -91,9 +80,6 @@ namespace ChessPlatform.Backend.Migrations
 
                     b.Property<int>("FromRow")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("PlayedAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ToColumn")
                         .HasColumnType("integer");

@@ -2,11 +2,10 @@
 @using AutoMapper
 @using ChessPlatform.Frontend.Client.Services
 @using ChessPlatform.Models.Chess
-@using ChessPlatform.Models.Chess.Pieces
 @using ChessPlatform.Models.DTOs
 @inject SignalRChessService ChessService
 @inject HttpClient HttpClient
-@inject IMapper mapper
+@inject IMapper Mapper
 @rendermode @(new InteractiveWebAssemblyRenderMode(false))
 
 <style>
@@ -40,7 +39,7 @@
     
     
     .game-over-message {
-        color: white;
+        color: black;
     }
     
     .promotion-dialog {
@@ -141,6 +140,11 @@
         </div>
     }
     
+    @if (chessBoard.GameOverStatus is not null)
+    {
+        <h2 class="game-over-message">@chessBoard.GameOverStatus</h2>
+    }
+    
     @if (isPromotionActive)
     {
         <div class="promotion-dialog">
@@ -193,11 +197,11 @@
     {
         get
         {
-            return chessBoard.PlayerColor switch
+            return chessBoard.PlayerTurn switch
             {
                 Color.White => [FENChar.WhiteKnight, FENChar.WhiteBishop, FENChar.WhiteRook, FENChar.WhiteQueen],
                 Color.Black => [FENChar.BlackKing, FENChar.BlackBishop, FENChar.BlackRook, FENChar.BlackQueen],
-                _ => throw new ArgumentOutOfRangeException(nameof(chessBoard.PlayerColor), chessBoard.PlayerColor, null)
+                _ => throw new ArgumentOutOfRangeException(nameof(chessBoard.PlayerTurn), chessBoard.PlayerTurn, null)
             };
         }
     }
@@ -211,18 +215,8 @@
         message = response.StatusCode.ToString();
         
         var boardResponse = await HttpClient.GetFromJsonAsync<GameDto>($"game/{Id}");
-        
-        var board = new Piece?[8, 8];
-        
-        for (var i = 0; i < 8; i++)
-        {
-            for (var j = 0; j < 8; j++)
-            {
-                board[i, j] = mapper.Map<Piece?>(boardResponse!.Board[i][j]);
-            }
-        }
-        
-        chessBoard = new ChessLogic.ChessBoard.ChessBoard(board, boardResponse!.PlayerColor, mapper.Map<LastMove?>(boardResponse.LastMove));
+
+        chessBoard = Mapper.Map<ChessLogic.ChessBoard.ChessBoard>(boardResponse);
         
         ChessService.MoveReceived += OnMoveReceived;
         ChessService.SetPlayerColor += OnSetPlayerColor;
@@ -230,10 +224,17 @@
         await ChessService.ChangeRoomAsync(Id);
     }
     
-    private void OnMoveReceived(Coords from, Coords to)
+    private void OnMoveReceived(Coords from, Coords to, FENChar? piece)
     {
-        UpdateBoard(from, to);
+        promotedPiece = piece;
+        InvokeAsync(UpdateBoardThread).GetAwaiter();
         InvokeAsync(StateHasChanged).GetAwaiter();
+        return;
+
+        void UpdateBoardThread()
+        {
+            UpdateBoard(from, to);
+        }
     }
     
     private void OnSetPlayerColor(Color color)
@@ -248,6 +249,9 @@
 
     private void SelectingPiece(Coords coords)
     {
+        if (chessBoard.GameOverStatus is not null)
+            return;
+        
         var piece = chessBoard[coords];
         
         if (piece is null || piece.Color != playerColor || IsWrongPieceSelected(piece.FENChar))
@@ -267,8 +271,8 @@
     private bool IsWrongPieceSelected(FENChar piece)
     {
         var isWhitePieceSelected = piece.ToString().StartsWith("White");
-        return (isWhitePieceSelected && chessBoard.PlayerColor == Color.Black) ||
-               (!isWhitePieceSelected && chessBoard.PlayerColor == Color.White);
+        return (isWhitePieceSelected && chessBoard.PlayerTurn == Color.Black) ||
+               (!isWhitePieceSelected && chessBoard.PlayerTurn == Color.White);
         
     }
 
@@ -294,7 +298,7 @@
             promotionCoords = newCoords;
             return;
         }
-        await ChessService.SendMoveAsync(selectedSquare.Value.Coords, newCoords);
+        await ChessService.SendMoveAsync(selectedSquare.Value.Coords, newCoords, promotedPiece);
         UpdateBoard(selectedSquare.Value.Coords, newCoords);
     }
 
@@ -332,12 +336,13 @@
     private bool IsSquareCheck(Coords coords) =>
         coords == chessBoard.CheckedKingCoords;
 
-    private void PromotePiece(FENChar piece)
+    private async Task PromotePiece(FENChar piece)
     {
         if (promotionCoords is null || selectedSquare is null)
             return;
         
         promotedPiece = piece;
+        await ChessService.SendMoveAsync(selectedSquare.Value.Coords, promotionCoords.Value, promotedPiece);
         UpdateBoard(selectedSquare.Value.Coords, promotionCoords.Value);
     }
 

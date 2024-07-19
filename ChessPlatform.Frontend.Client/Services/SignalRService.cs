@@ -10,7 +10,7 @@ public class SignalRChessService
     
     private string? _roomId;
 
-    public event Action<Coords, Coords> MoveReceived;
+    public event Action<Coords, Coords, FENChar?> MoveReceived;
     public event Action<Color> SetPlayerColor; 
 
     public SignalRChessService()
@@ -19,9 +19,10 @@ public class SignalRChessService
             .WithUrl($"http://localhost:5133/chessHub")
             .Build();
 
-        _hubConnection.On<int, int, int, int>("ReceiveMove", (fromRow, fromColumn, toRow, toColumn) =>
+        _hubConnection.On<int, int, int, int, FENChar?>("ReceiveMove", (fromRow, fromColumn,
+            toRow, toColumn, promotedPiece) =>
         {
-            MoveReceived?.Invoke(new Coords(fromRow, fromColumn), new Coords(toRow, toColumn));
+            MoveReceived?.Invoke(new Coords(fromRow, fromColumn), new Coords(toRow, toColumn), promotedPiece);
         });
         
         _hubConnection.On<Color>("SetPlayerColor", color =>
@@ -52,9 +53,10 @@ public class SignalRChessService
         _isConnected = true;
     }
 
-    public async Task SendMoveAsync(Coords from, Coords to)
+    public async Task SendMoveAsync(Coords from, Coords to, FENChar? promotedType)
     {
         if (_roomId is not null)
-            await _hubConnection.InvokeAsync("SendMove", from.Row, from.Column, to.Row, to.Column, _roomId);
+            await _hubConnection.InvokeAsync("SendMove", from.Row, from.Column, to.Row,
+                to.Column, promotedType, _roomId);
     }
 }

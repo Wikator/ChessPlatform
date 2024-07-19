@@ -1,22 +1,21 @@
 using System.Security.Claims;
-using AutoMapper;
+using ChessPlatform.Backend.BackgroundServices;
 using ChessPlatform.Backend.Configuration;
 using ChessPlatform.Backend.Data;
 using ChessPlatform.Backend.Services;
 using ChessPlatform.Backend.SignalR;
 using ChessPlatform.Models;
-using ChessPlatform.Models.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-// builder.Services.AddSingleton<IChessService, ChessService>();
 builder.Services.AddScoped<IChessService, ChessService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 
 builder.Services.AddCors();
+builder.Services.AddHostedService<TimeoutCheckerService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -64,11 +63,10 @@ app.MapGet("account/info", (HttpContext context) =>
     });
 }).RequireAuthorization();
 
-app.MapGet("game/{id:guid}", async (IChessService chessService, IMapper mapper, Guid id) =>
+app.MapGet("game/{id:guid}", async (IChessService chessService, Guid id) =>
 {
-    var game = await chessService.GetGame(id);
-    Console.WriteLine(game?.WhitePlayerId is null);
-    return Results.Ok(mapper.Map<GameDto>(game));
+    var game = await chessService.GetGameDto(id);
+    return Results.Ok(game);
 });
 
 app.MapPost("game", async (IChessService chessService, HttpContext context) =>

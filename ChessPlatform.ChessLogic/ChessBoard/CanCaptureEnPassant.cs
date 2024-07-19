@@ -10,10 +10,10 @@ public partial class ChessBoard
         if (LastMove is null)
             return false;
         
-        var (piece, previousCoords, currentCoords) = LastMove.Value;
+        var (piece, previousCoords, currentCoords, _) = LastMove.Value;
 
         if (piece is not Pawn
-            || pawn.Color != PlayerColor
+            || pawn.Color != PlayerTurn
             || Math.Abs(currentCoords.Row - previousCoords.Row) != 2
             || pawnCoords.Row != currentCoords.Row
             || Math.Abs(pawnCoords.Column - currentCoords.Column) != 1)

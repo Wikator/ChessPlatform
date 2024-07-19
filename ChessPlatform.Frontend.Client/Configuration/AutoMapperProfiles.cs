@@ -1,6 +1,6 @@
 using AutoMapper;
+using ChessPlatform.ChessLogic;
 using ChessPlatform.Models.Chess;
-using ChessPlatform.Models.Chess.Pieces;
 using ChessPlatform.Models.DTOs;
 
 namespace ChessPlatform.Frontend.Client.Configuration;
@@ -9,49 +9,41 @@ public class AutoMapperProfiles : Profile
 {
     public AutoMapperProfiles()
     {
-        CreateMap<PieceDto, Piece>()
-            .ConvertUsing<PieceDtoToPieceConverter>();
-
-        CreateMap<CoordsDto, Coords>();
-        CreateMap<LastMoveDto?, LastMove?>();
+        CreateMap<GameDto, ChessLogic.ChessBoard.ChessBoard>()
+            .ConvertUsing(new ChessGameDtoEntityConverter());
     }
     
-    private class PieceDtoToPieceConverter : ITypeConverter<PieceDto, Piece>
+    private class ChessGameDtoEntityConverter : ITypeConverter<GameDto, ChessLogic.ChessBoard.ChessBoard>
     {
-        public Piece Convert(PieceDto source, Piece destination, ResolutionContext context)
+        public ChessLogic.ChessBoard.ChessBoard Convert(GameDto source, ChessLogic.ChessBoard.ChessBoard destination,
+            ResolutionContext context)
         {
-            Piece piece = source.FENChar switch
+            var pieces = FenConverter.ConvertFenToBoard(source.Fen);
+            
+            var castlingRights = source.Fen.Split(' ')[2];
+            var canWhiteCastleKingSide = castlingRights.Contains('K');
+            var canWhiteCastleQueenSide = castlingRights.Contains('Q');
+            var canBlackCastleKingSide = castlingRights.Contains('k');
+            var canBlackCastleQueenSide = castlingRights.Contains('q');
+            
+            LastMove? lastMove = null;
+            
+            if (source.LastMove is not null)
             {
-                FENChar.WhitePawn => new Pawn(source.Color),
-                FENChar.WhiteKnight => new Knight(source.Color),
-                FENChar.WhiteBishop => new Bishop(source.Color),
-                FENChar.WhiteRook => new Rook(source.Color),
-                FENChar.WhiteQueen => new Queen(source.Color),
-                FENChar.WhiteKing => new King(source.Color),
-                FENChar.BlackPawn => new Pawn(source.Color),
-                FENChar.BlackKnight => new Knight(source.Color),
-                FENChar.BlackBishop => new Bishop(source.Color),
-                FENChar.BlackRook => new Rook(source.Color),
-                FENChar.BlackQueen => new Queen(source.Color),
-                FENChar.BlackKing => new King(source.Color),
-                _ => throw new ArgumentOutOfRangeException(nameof(source), source, "Cannot convert to Piece")
-            };
-
-            if (source.HasMoved is null || !source.HasMoved.Value) return piece;
-            switch (piece)
-            {
-                case King king:
-                    king.SetHasMoved();
-                    break;
-                case Rook rook:
-                    rook.SetHasMoved();
-                    break;
-                case Pawn pawn:
-                    pawn.SetHasMoved();
-                    break;
+                lastMove = new LastMove(pieces[source.LastMove.To.Row, source.LastMove.To.Column]!,
+                    new Coords(source.LastMove.From.Row, source.LastMove.From.Column),
+                    new Coords(source.LastMove.To.Row, source.LastMove.To.Column),
+                    source.LastMove.PlayedAt);
             }
-
-            return piece;
+            
+            var game = new ChessLogic.ChessBoard.ChessBoard(pieces, source.PlayerTurn, lastMove, source.TimeControl,
+                source.IsOver, source.WhitePlayerRemainingTime, source.BlackPlayerRemainingTime,
+                canWhiteCastleKingSide, canWhiteCastleQueenSide, canBlackCastleKingSide, canBlackCastleQueenSide)
+            {
+                WhitePlayerId = source.WhitePlayer?.Id,
+                BlackPlayerId = source.BlackPlayer?.Id
+            };
+            return game;
         }
     }
 }

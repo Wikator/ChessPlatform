@@ -6,7 +6,7 @@ var sqlPassword = builder.AddParameter("sql-password", secret: true);
 
 var sqlServer = builder.AddContainer("postgres", "postgres")
     .WithEnvironment("POSTGRES_PASSWORD", sqlPassword)
-    .WithVolume("pgdata3", "/var/lib/postgresql/data")
+    .WithVolume("pgdata4", "/var/lib/postgresql/data")
     .WithEndpoint(5432, 5432);
 
 var backend = builder.AddProject<Projects.ChessPlatform_Backend>("backend");

@@ -5,8 +5,6 @@ namespace ChessPlatform.Models.Chess.Pieces;
 [method: JsonConstructor]
 public record Pawn(Color Color) : Piece(Color)
 {
-    public bool HasMoved { get; private set; }
-    
     public override FENChar FENChar { get; } = Color == Color.White ? FENChar.WhitePawn : FENChar.BlackPawn;
 
     public override Coords[] Directions { get; protected set; } =
@@ -31,8 +29,6 @@ public record Pawn(Color Color) : Piece(Color)
 
     public void SetHasMoved()
     {
-        HasMoved = true;
-        
         Directions = Color switch
         {
             Color.White =>

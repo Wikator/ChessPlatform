@@ -16,7 +16,7 @@ public partial class ChessBoard
                 var currentCoords = new Coords(row, column);
                 var piece = Board[currentCoords.Row, currentCoords.Column];
                 
-                if (piece is null || piece.Color != PlayerColor)
+                if (piece is null || piece.Color != PlayerTurn)
                     continue;
 
                 var pieceSafeSquares = new List<Coords>();

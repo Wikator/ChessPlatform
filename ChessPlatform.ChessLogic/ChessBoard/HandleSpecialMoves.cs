@@ -19,7 +19,6 @@ public partial class ChessBoard
                     var rookNewPositionY = newCoords.Column > previousCoords.Column ? 5 : 3;
                     Board[rookPositionRow, rookPositionColumn] = null;
                     Board[rookPositionRow, rookNewPositionY] = rook;
-                    rook.SetHasMoved();
                 }
                 break;
             case Pawn when LastMove?.Piece is Pawn

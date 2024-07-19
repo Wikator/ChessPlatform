@@ -5,8 +5,6 @@ namespace ChessPlatform.Models.Chess.Pieces;
 [method: JsonConstructor]
 public record King(Color Color) : Piece(Color)
 {
-    public bool HasMoved { get; private set; }
-    
     public override FENChar FENChar { get; } = Color == Color.White ? FENChar.WhiteKing : FENChar.BlackKing;
 
     public override Coords[] Directions { get; protected set; } =
@@ -20,9 +18,4 @@ public record King(Color Color) : Piece(Color)
         new Coords(0, 1),
         new Coords(0, -1)
     ];
-    
-    public void SetHasMoved()
-    {
-        HasMoved = true;
-    }
 }
